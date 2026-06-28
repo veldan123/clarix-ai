@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import SplashScreen from './components/ui/SplashScreen';
 
 import Landing from './pages/marketing/Landing';
 import Docs from './pages/marketing/Docs';
@@ -38,24 +40,6 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-function PageTransition({ children }) {
-  const location = useLocation();
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.18 }}
-        style={{ minHeight: '100%' }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
-  );
-}
-
 function DashboardRoutes() {
   const location = useLocation();
   const title = PAGE_TITLES[location.pathname] || 'Dashboard';
@@ -88,20 +72,38 @@ function DashboardRoutes() {
   );
 }
 
+function InnerApp() {
+  const location = useLocation();
+  const [splashKey, setSplashKey] = useState(location.key);
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    setSplashKey(location.key);
+    setShowSplash(true);
+  }, [location.key]);
+
+  return (
+    <>
+      {showSplash && <SplashScreen key={splashKey} onDone={() => setShowSplash(false)} />}
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/docs" element={<Docs />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/dashboard/*" element={<DashboardRoutes />} />
+        <Route path="/404" element={<NotFound />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/docs" element={<Docs />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/dashboard/*" element={<DashboardRoutes />} />
-            <Route path="/404" element={<NotFound />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <InnerApp />
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
