@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { Download } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -82,13 +82,13 @@ export default function Analytics() {
     'Escalated (%)': Math.round(d.escalated / (d.conversations || 1) * 100),
   }));
 
-  const responseData = [
+  const responseData = useMemo(() => [
     { bucket: '<100ms', count: Math.floor(Math.random() * 800 + 200) },
     { bucket: '100-200ms', count: Math.floor(Math.random() * 1200 + 600) },
     { bucket: '200-400ms', count: Math.floor(Math.random() * 600 + 200) },
     { bucket: '400-800ms', count: Math.floor(Math.random() * 200 + 50) },
     { bucket: '>800ms', count: Math.floor(Math.random() * 50 + 10) },
-  ];
+  ], []);
 
   return (
     <div style={{ padding: 28 }}>
@@ -210,8 +210,8 @@ export default function Analytics() {
               </div>
             ))}
             {HEATMAP.map(row => (
-              <>
-                <div key={row.day} style={{ color: '#5A5A72', fontSize: 11, display: 'flex', alignItems: 'center', paddingRight: 6 }}>
+              <Fragment key={row.day}>
+                <div style={{ color: '#5A5A72', fontSize: 11, display: 'flex', alignItems: 'center', paddingRight: 6 }}>
                   {row.day}
                 </div>
                 {row.hours.map((val, hi) => (
@@ -229,7 +229,7 @@ export default function Analytics() {
                     onMouseLeave={e => e.currentTarget.style.outline = 'none'}
                   />
                 ))}
-              </>
+              </Fragment>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'flex-end', marginTop: 12 }}>

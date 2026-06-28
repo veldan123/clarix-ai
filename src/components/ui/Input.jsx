@@ -6,6 +6,7 @@ export default function Input({
   type = 'text',
   value,
   onChange,
+  onBlur,
   placeholder,
   error,
   valid,
@@ -59,6 +60,7 @@ export default function Input({
           }}
           onBlur={e => {
             if (!error && !valid) e.target.style.borderColor = '#2A2A38';
+            onBlur?.(e);
           }}
         />
         <span style={{ position: 'absolute', right: 12, display: 'flex', alignItems: 'center', gap: 4 }}>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Eye, EyeOff, Copy, Check, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Badge from '../../components/ui/Badge';
@@ -12,19 +12,22 @@ function KeyDisplay({ keyStr, fullKey }) {
   const [revealed, setRevealed] = useState(false);
   const [countdown, setCountdown] = useState(10);
   const [copied, setCopied] = useState(false);
-  const [timer, setTimer] = useState(null);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
 
   const reveal = () => {
     setRevealed(true);
     setCountdown(10);
-    clearInterval(timer);
-    const id = setInterval(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
       setCountdown(c => {
-        if (c <= 1) { clearInterval(id); setRevealed(false); return 10; }
+        if (c <= 1) { clearInterval(timerRef.current); timerRef.current = null; setRevealed(false); return 10; }
         return c - 1;
       });
     }, 1000);
-    setTimer(id);
   };
 
   const copy = async () => {
@@ -45,7 +48,7 @@ function KeyDisplay({ keyStr, fullKey }) {
         {revealed ? fullKey : keyStr + '...'}
         {revealed && <span style={{ color: '#F59E0B', marginLeft: 8, fontSize: 11 }}>({countdown}s)</span>}
       </code>
-      <button onClick={revealed ? () => { setRevealed(false); clearInterval(timer); } : reveal}
+      <button onClick={revealed ? () => { setRevealed(false); if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } } : reveal}
         aria-label={revealed ? 'Hide key' : 'Reveal key'}
         style={{ background: 'none', border: 'none', color: '#5A5A72', cursor: 'pointer', display: 'flex', padding: 2 }}
         onMouseEnter={e => e.currentTarget.style.color = '#F0F0F5'}

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, FileText, FileUp, X, ExternalLink, Trash2, RefreshCw, Search, ChevronUp, ChevronDown, AlertCircle } from 'lucide-react';
+import { Plus, FileText, FileUp, X, ExternalLink, Trash2, RefreshCw, Search, ChevronUp, ChevronDown, AlertCircle, File, Link2, Table } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -14,7 +14,7 @@ const STATUS_MAP = {
   error: { label: 'Error', variant: 'error' },
 };
 
-const TYPE_ICONS = { PDF: '📄', TXT: '📝', DOCX: '📃', CSV: '📊', URL: '🔗' };
+const TYPE_ICONS = { PDF: FileText, TXT: File, DOCX: File, CSV: Table, URL: Link2 };
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -94,15 +94,17 @@ export default function Documents() {
   };
 
   const doUpload = async () => {
+    if (uploadTab === 0 && !selectedFile) { addToast('error', 'No file selected', 'Please select a file to upload.'); return; }
+    if (uploadTab === 1 && !url.trim()) { addToast('error', 'No URL entered', 'Please enter a URL to scrape.'); return; }
+    if (uploadTab === 2 && !pasteText.trim()) { addToast('error', 'No text entered', 'Please paste some text to upload.'); return; }
     const name = uploadTab === 0 ? selectedFile?.name : uploadTab === 1 ? `Scraped: ${url}` : 'Pasted Text';
-    if (!name) { addToast('error', 'Nothing to upload', 'Please select a file, URL, or paste text.'); return; }
     setUploading(true);
     setUploadProgress(0);
 
     const chatbot = mockChatbots.find(b => b.id === assignChatbot);
     const newDoc = {
       id: 'doc-' + Date.now(),
-      name: uploadTab === 1 ? `Scraped: ${new URL(url.startsWith('http') ? url : 'https://' + url).hostname}` : name,
+      name: uploadTab === 1 ? (() => { try { return `Scraped: ${new URL(url.startsWith('http') ? url : 'https://' + url).hostname}`; } catch { return `Scraped: ${url}`; } })() : name,
       type: uploadTab === 1 ? 'URL' : uploadTab === 2 ? 'TXT' : (selectedFile?.name.split('.').pop().toUpperCase() || 'TXT'),
       size: selectedFile ? `${(selectedFile.size / 1024).toFixed(0)} KB` : uploadTab === 1 ? 'Web' : `${Math.round(pasteText.length / 1024 * 10) / 10} KB`,
       chatbot: chatbot?.name || 'Unassigned',
@@ -213,7 +215,7 @@ export default function Documents() {
                 <tr key={doc.id} style={{ borderBottom: '1px solid #0D0D14' }}>
                   <td style={{ padding: '13px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 16 }}>{TYPE_ICONS[doc.type] || '📄'}</span>
+                      {(() => { const Icon = TYPE_ICONS[doc.type] || FileText; return <Icon size={16} style={{ color: '#5A5A72', flexShrink: 0 }} />; })()}
                       <span style={{ color: '#F0F0F5', fontSize: 13, fontWeight: 500 }}>{doc.name}</span>
                     </div>
                     {doc.errorMessage && (

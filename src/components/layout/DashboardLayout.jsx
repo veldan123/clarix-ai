@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Bell, ChevronDown, User, Settings, LogOut } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useAuth } from '../../context/AuthContext';
@@ -9,7 +9,7 @@ import { mockNotifications } from '../../data/mockData';
 
 const TYPE_MAP = { warning: 'warning', info: 'info', success: 'success', error: 'error' };
 
-export default function DashboardLayout({ title }) {
+export default function DashboardLayout({ title, children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { addToast } = useToast();
@@ -185,7 +185,7 @@ export default function DashboardLayout({ title }) {
 
         {/* Page content */}
         <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>
