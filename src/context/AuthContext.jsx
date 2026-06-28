@@ -1,63 +1,67 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
+
+function avatarFromName(name) {
+  return (name || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??';
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('clarix_user');
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch {}
-    }
-    setLoading(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setUser(buildUser(session.user));
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? buildUser(session.user) : null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = (email, password) => {
-    const isDemo = email === 'demo@clarixaisupport.com' && password === 'password123';
-    const hasAccount = localStorage.getItem('clarix_accounts_' + email);
-
-    if (!isDemo && !hasAccount) return false;
-
-    const userData = {
-      id: 'usr_demo',
-      name: isDemo ? 'Demo User' : JSON.parse(hasAccount).name,
-      email,
-      plan: 'growth',
-      avatar: isDemo ? 'DU' : JSON.parse(hasAccount).avatar,
-      businessName: isDemo ? 'Acme Corp' : JSON.parse(hasAccount).businessName,
+  function buildUser(supabaseUser) {
+    const meta = supabaseUser.user_metadata || {};
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email,
+      businessName: meta.businessName || meta.email || supabaseUser.email,
+      avatar: meta.avatar || avatarFromName(meta.businessName || supabaseUser.email),
+      plan: meta.plan || 'starter',
     };
-    setUser(userData);
-    localStorage.setItem('clarix_user', JSON.stringify(userData));
-    return true;
+  }
+
+  const login = async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { ok: false, message: error.message };
+    setUser(buildUser(data.user));
+    return { ok: true };
   };
 
-  const signup = (businessName, email, password) => {
-    const avatar = (businessName.split(' ').map(w => w[0]).join('').slice(0, 2)).toUpperCase();
-    const userData = {
-      id: 'usr_' + Math.random().toString(36).slice(2, 9),
-      name: businessName,
+  const signup = async (businessName, email, password) => {
+    const avatar = avatarFromName(businessName);
+    const { data, error } = await supabase.auth.signUp({
       email,
-      plan: 'starter',
-      avatar,
-      businessName,
-    };
-    localStorage.setItem('clarix_accounts_' + email, JSON.stringify({ name: businessName, avatar, businessName }));
-    setUser(userData);
-    localStorage.setItem('clarix_user', JSON.stringify(userData));
-    return true;
+      password,
+      options: { data: { businessName, avatar, plan: 'starter' } },
+    });
+    if (error) return { ok: false, message: error.message };
+    if (data.user) setUser(buildUser(data.user));
+    return { ok: true };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('clarix_user');
   };
 
-  const updateUser = (updates) => {
-    const updated = { ...user, ...updates };
-    setUser(updated);
-    localStorage.setItem('clarix_user', JSON.stringify(updated));
+  const updateUser = async (updates) => {
+    const { data, error } = await supabase.auth.updateUser({ data: updates });
+    if (!error && data.user) setUser(buildUser(data.user));
   };
 
   return (

@@ -100,8 +100,12 @@ export default function Signup() {
     if (Object.keys(errs).length || !form.agreed) return;
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    signup(form.businessName, form.email, form.password);
+    const { ok, message } = await signup(form.businessName, form.email, form.password);
+    if (!ok) {
+      setErrors(prev => ({ ...prev, email: message || 'Could not create account.' }));
+      setLoading(false);
+      return;
+    }
     addToast('success', 'Account created!', `Welcome to Clarix AI Support, ${form.businessName}!`);
     navigate('/dashboard');
   };

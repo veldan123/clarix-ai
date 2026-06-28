@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '../../lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import { Zap, Shield, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -26,13 +27,12 @@ export default function Login() {
     if (!form.email || !form.password) { setError('Please enter your email and password.'); return; }
     setLoading(true);
     setError('');
-    await new Promise(r => setTimeout(r, 700));
-    const ok = login(form.email, form.password);
+    const { ok, message } = await login(form.email, form.password);
     if (ok) {
       addToast('success', 'Welcome back!', 'Logged in successfully.');
       navigate('/dashboard');
     } else {
-      setError('Invalid email or password. Try the demo credentials below.');
+      setError(message || 'Invalid email or password.');
     }
     setLoading(false);
   };
@@ -40,7 +40,9 @@ export default function Login() {
   const handleForgot = async (e) => {
     e.preventDefault();
     setForgotLoading(true);
-    await new Promise(r => setTimeout(r, 1000));
+    await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
     setForgotLoading(false);
     setForgotSent(true);
   };
