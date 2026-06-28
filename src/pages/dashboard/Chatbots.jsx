@@ -9,7 +9,6 @@ import EmptyState from '../../components/ui/EmptyState';
 import { mockChatbots } from '../../data/mockData';
 import { useToast } from '../../context/ToastContext';
 
-const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 
 const LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Japanese', 'Portuguese', 'Dutch', 'Italian', 'Polish', 'Korean'];
 const TONES = [
@@ -110,26 +109,19 @@ function TestPanel({ bot, onClose }) {
     setMessages(next);
     setLoading(true);
     try {
-      if (!ANTHROPIC_API_KEY) throw new Error('no_key');
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 400,
-          system: `You are a test instance of "${bot.name}". Tone: ${bot.tone}. ${bot.description}. Answer helpfully and concisely.`,
           messages: next,
+          system: `You are a test instance of "${bot.name}". Tone: ${bot.tone}. ${bot.description}. Answer helpfully and concisely.`,
         }),
       });
+      if (!res.ok) throw new Error('api_error');
       const data = await res.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.content[0].text }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: data.text }]);
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: `[Demo] I'm ${bot.name} responding with ${bot.tone.toLowerCase()} tone. Add your Anthropic API key to enable live AI responses.` }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: `[Error] Could not reach the AI. Please check your API configuration.` }]);
     }
     setLoading(false);
   };

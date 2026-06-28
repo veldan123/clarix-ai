@@ -9,7 +9,6 @@ import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import CodeBlock from '../../components/ui/CodeBlock';
 
-const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 
 const SYSTEM_PROMPT = `You are the Clarix AI Support customer support assistant. Clarix AI Support is a B2B SaaS platform that allows businesses to embed AI-powered customer support chatbots into their websites via a simple script tag or REST API.
 
@@ -176,34 +175,16 @@ function DemoChat() {
     setLoading(true);
 
     try {
-      if (!ANTHROPIC_API_KEY) throw new Error('no_key');
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 400,
-          system: SYSTEM_PROMPT,
-          messages: newMessages,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages, system: SYSTEM_PROMPT }),
       });
       if (!res.ok) throw new Error('api_error');
       const data = await res.json();
-      setMessages(prev => [...prev, { role: 'assistant', content: data.content[0].text }]);
-    } catch (err) {
-      if (err.message === 'no_key') {
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: "I'm a demo assistant for Clarix AI Support. To enable live AI responses, add your Anthropic API key to the environment variables. I can tell you that Clarix supports PDF, TXT, DOCX, and CSV training documents, and the Growth plan at $49/month includes 5,000 API calls and custom branding.",
-        }]);
-      } else {
-        setError('Failed to get a response. Please try again.');
-      }
+      setMessages(prev => [...prev, { role: 'assistant', content: data.text }]);
+    } catch {
+      setError('Failed to get a response. Please try again.');
     } finally {
       setLoading(false);
     }
