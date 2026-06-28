@@ -21,11 +21,18 @@ export default async function handler(req, res) {
     generationConfig: { maxOutputTokens: 400 },
   };
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  // AQ. prefix keys use Bearer auth; AIza prefix keys use ?key= query param
+  const isAuthKey = apiKey.startsWith('AQ.');
+  const url = isAuthKey
+    ? 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+    : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
   const geminiRes = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(isAuthKey ? { 'Authorization': `Bearer ${apiKey}` } : {}),
+    },
     body: JSON.stringify(body),
   });
 
