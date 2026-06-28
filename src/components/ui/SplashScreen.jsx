@@ -5,9 +5,9 @@ export default function SplashScreen({ onDone }) {
   const [hiding, setHiding] = useState(false);
 
   useEffect(() => {
-    // Animation finishes at ~1.27s, start fade-out at 1.3s
-    const fadeTimer = setTimeout(() => setHiding(true), 1300);
-    const doneTimer = setTimeout(() => onDone?.(), 1500);
+    // Animation finishes at ~3.8s, start fade-out at 3.8s
+    const fadeTimer = setTimeout(() => setHiding(true), 3800);
+    const doneTimer = setTimeout(() => onDone?.(), 4000);
     return () => { clearTimeout(fadeTimer); clearTimeout(doneTimer); };
   }, [onDone]);
 
